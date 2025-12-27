@@ -9,26 +9,25 @@ export const Meters = () => {
 
   const getMeters = async () => {
     const res = await api.getMeters();
+    await getAreas(res.results);
     setMeters(res.results);
-    getAreas(res.results);
   };
 
   const getAreas = async (currentData: ApiMeterData[]) => {
     const uniqAreaIds = [...new Set(currentData.map((el) => el.area.id))];
-    uniqAreaIds.forEach(async (id) => {
+    const neededIds = uniqAreaIds.filter((id) => !(id in areasIds));
+
+    neededIds.forEach(async (id) => {
       const area = await api.getAreas(id);
-      console.log(id, area.house.address, area.str_number_full);
       setAreasIds((prev) => ({
         ...prev,
-        [id]: (`${area.house.address}, ${area.str_number_full}`),
+        [id]: `${area.house.address}, ${area.str_number_full}`,
       }));
     });
-    console.log(uniqAreaIds);
   };
 
   const getAddress = (areaId: string): string => {
-    const area = areasIds[areaId];
-    return area
+    return areasIds[areaId];
   };
 
   useEffect(() => {
