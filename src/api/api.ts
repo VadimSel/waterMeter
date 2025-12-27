@@ -18,11 +18,4 @@ export const api = {
     const data = await res.json()
     return data.results[0];
   }
-  // getAreas: async () => {
-  //   const res = await fetch(`${BASE}areas/?id=526237d1e0e34c524382c074`, {
-  //     method: "GET",
-  //   })
-  //   const data = await res.json()
-  //   console.log(data)
-  // }
 };
