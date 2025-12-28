@@ -1,11 +1,14 @@
-import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import { rootStore } from '../main';
+import { observer } from 'mobx-react-lite';
 import { tableHeaders } from '../types/common';
+import { rootStore } from '../main';
 
 export const Meters = observer(() => {
+  const { meters, loadMeters, getAddress, visiblePages, currentPage, setPage } =
+    rootStore;
+
   useEffect(() => {
-    rootStore.getMeters();
+    loadMeters();
   }, []);
 
   return (
@@ -13,29 +16,43 @@ export const Meters = observer(() => {
       <table>
         <thead>
           <tr>
-            {tableHeaders.map((el) => (
-              <th key={el}>{el}</th>
+            {tableHeaders.map((h) => (
+              <th key={h}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rootStore.meters.map((el) => (
-            <tr key={el.id}>
-              <td>{el.serial_number}</td>
-              <td>
-                {el._type.includes('ColdWaterAreaMeter') ? 'ХВС' : 'ГВС'}
-              </td>
-              <td>
-                {new Date(el.installation_date).toLocaleDateString()}
-              </td>
-              <td>{el.is_automatic ? 'Да' : 'Нет'}</td>
-              <td>{el.initial_values}</td>
-              <td>{rootStore.getAddress(el.area.id)}</td>
-              <td>{el.description}</td>
+          {meters.map((m) => (
+            <tr key={m.id}>
+              <td>{m.serial_number}</td>
+              <td>{m._type.includes('Cold') ? 'ХВС' : 'ГВС'}</td>
+              <td>{new Date(m.installation_date).toLocaleDateString()}</td>
+              <td>{m.is_automatic ? 'Да' : 'Нет'}</td>
+              <td>{m.initial_values}</td>
+              <td>{getAddress(m.area.id)}</td>
+              <td>{m.description}</td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      <div>
+        {visiblePages.map((page, index) => {
+          const prev = visiblePages[index - 1];
+
+          return (
+            <span key={page}>
+              {prev && page - prev > 1 && <span>...</span>}
+              <button
+                disabled={page === currentPage}
+                onClick={() => setPage(page)}
+              >
+                {page}
+              </button>
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 });
