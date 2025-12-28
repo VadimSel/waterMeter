@@ -6,7 +6,6 @@ export const RootStore = types
   .model('RootStore', {
     meters: types.array(types.frozen<ApiMeterData>()),
     areasCache: types.map(types.string),
-    loading: types.boolean,
   })
   .actions((self) => {
     const getAreas = flow(function* (currentData: ApiMeterData[]) {
@@ -21,11 +20,9 @@ export const RootStore = types
 
     return {
       getMeters: flow(function* () {
-        self.loading = true;
         const res = yield api.getMeters();
         yield getAreas(res.results);
         self.meters = res.results;
-        self.loading = false;
       }),
       getAddress(id: string) {
         return self.areasCache.get(id) || '';

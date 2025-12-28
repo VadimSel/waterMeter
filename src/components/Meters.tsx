@@ -8,8 +8,6 @@ export const Meters = observer(() => {
     rootStore.getMeters();
   }, []);
 
-  if (rootStore.loading) return <div>Загрузка...</div>;
-
   return (
     <div>
       <table>
