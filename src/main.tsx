@@ -6,7 +6,6 @@ import { RootStore } from "./store/RootStore.ts";
 export const rootStore = RootStore.create({
   meters: [],
   areasCache: {},
-  loading: false
 })
 
 createRoot(document.getElementById('root')!).render(
