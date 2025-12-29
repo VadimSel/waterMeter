@@ -1,22 +1,24 @@
-import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
+import { observer } from 'mobx-react-lite';
 import styled from 'styled-components';
+import { rootStore } from '../main';
 import ColdIcon from '../assets/cold.svg';
 import HotIcon from '../assets/hot.svg';
 import TrashHover from '../assets/trash-hover.svg';
-import TrashNormal from '../assets/trash-normal.svg';
-import { rootStore } from '../main';
 
 const Container = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Roboto', sans-serif;
 `;
 
 const TableWrapper = styled.div`
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   overflow: hidden;
+  flex: 1;
+  overflow-y: auto;
 `;
 
 const StyledTable = styled.table`
@@ -29,16 +31,22 @@ const Thead = styled.thead`
   position: sticky;
   top: 0;
   z-index: 1;
+  height: 32px;
+  font-weight: 500;
+  font-size: 13px;
+`;
+
+const Tbody = styled.tbody`
+  font-weight: 400;
+  font-size: 14px;
 `;
 
 const Th = styled.th`
-  padding: 16px 12px;
   text-align: left;
-  font-weight: 600;
-  font-size: 14px;
-  color: #424242;
+  color: #697180;
   &:first-child {
     width: 60px;
+    text-align: center;
   }
   &:nth-child(2) {
     width: 80px;
@@ -46,28 +54,27 @@ const Th = styled.th`
 `;
 
 const Tr = styled.tr`
+  border-bottom: 1px solid #e0e0e0;
+  height: 52px;
   &:hover {
     background: #f9f9f9;
   }
 `;
 
 const Td = styled.td`
-  padding: 16px 12px;
-  border-top: 1px solid #e0e0e0;
-  font-size: 14px;
   color: #212121;
-  vertical-align: middle;
 `;
 
 const NumberCell = styled(Td)`
   color: #757575;
-  font-weight: 500;
+  text-align: center;
 `;
 
-const TypeCell = styled(Td)`
+const TypeWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  height: 100%;
 `;
 
 const Icon = styled.img`
@@ -78,36 +85,29 @@ const Icon = styled.img`
 const DeleteButton = styled.button`
   background: none;
   border: none;
-  padding: 8px;
+  padding: 0;
   cursor: pointer;
   opacity: 0;
+  width: 100%;
+  height: 100%;
   ${Tr}:hover & {
     opacity: 1;
   }
-`;
-
-const TrashNormalIcon = styled.img`
-  width: 16px;
-  height: 16px;
 `;
 
 const TrashHoverIcon = styled.img`
-  width: 16px;
-  height: 16px;
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  ${Tr}:hover & {
-    opacity: 1;
-  }
+  width: 40px;
+  height: 40px;
+  margin-right: 12px;
 `;
 
 const DeleteWrapper = styled.div`
-  position: relative;
-  width: 32px;
-  height: 32px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 12px;
 `;
 
 const Pagination = styled.div`
@@ -115,7 +115,7 @@ const Pagination = styled.div`
   justify-content: flex-end;
   align-items: center;
   gap: 8px;
-  margin-top: 24px;
+  padding: 24px 12px;
 `;
 
 const PageButton = styled.button<{ active?: boolean }>`
@@ -142,14 +142,8 @@ const Dots = styled.span`
 `;
 
 export const Meters = observer(() => {
-  const {
-    meters,
-    loadMeters,
-    getAddress,
-    visiblePages,
-    currentPage,
-    setPage,
-  } = rootStore;
+  const { meters, loadMeters, getAddress, visiblePages, currentPage, setPage } =
+    rootStore;
 
   useEffect(() => {
     loadMeters();
@@ -165,43 +159,42 @@ export const Meters = observer(() => {
               <Th>Тип</Th>
               <Th>Дата установки</Th>
               <Th>Автоматический</Th>
-              <Th>Значение</Th>
+              <Th>Текущие показания</Th>
               <Th>Адрес</Th>
               <Th>Примечание</Th>
               <Th></Th>
             </tr>
           </Thead>
-          <tbody>
-            {meters.map((el, index) => (
-              <Tr key={el.id}>
+          <Tbody>
+            {meters.map((m, index) => (
+              <Tr key={m.id}>
                 <NumberCell>{index + 1 + rootStore.offset}</NumberCell>
-                <TypeCell>
-                  <Icon
-                    src={el._type.includes('Cold') ? ColdIcon : HotIcon}
-                    alt={el._type.includes('Cold') ? 'ХВС' : 'ГВС'}
-                  />
-                  {el._type.includes('Cold') ? 'ХВС' : 'ГВС'}
-                </TypeCell>
-                <Td>{new Date(el.installation_date).toLocaleDateString('ru-RU')}</Td>
                 <Td>
-                  <Icon
-                    alt={el.is_automatic ? 'Да' : 'Нет'}
-                  />
+                  <TypeWrapper>
+                    <Icon
+                      src={m._type.includes('Cold') ? ColdIcon : HotIcon}
+                      alt={m._type.includes('Cold') ? 'ХВС' : 'ГВС'}
+                    />
+                    {m._type.includes('Cold') ? 'ХВС' : 'ГВС'}
+                  </TypeWrapper>
                 </Td>
-                <Td>{el.initial_values}</Td>
-                <Td>{getAddress(el.area.id)}</Td>
-                <Td>{el.description}</Td>
+                <Td>
+                  {new Date(m.installation_date).toLocaleDateString('ru-RU')}
+                </Td>
+                <Td>{m.is_automatic ? 'Да' : 'Нет'}</Td>
+                <Td>{m.initial_values}</Td>
+                <Td>{getAddress(m.area.id)}</Td>
+                <Td>{m.description}</Td>
                 <Td>
                   <DeleteButton>
                     <DeleteWrapper>
-                      <TrashNormalIcon src={TrashNormal} alt="Удалить" />
                       <TrashHoverIcon src={TrashHover} alt="Удалить" />
                     </DeleteWrapper>
                   </DeleteButton>
                 </Td>
               </Tr>
             ))}
-          </tbody>
+          </Tbody>
         </StyledTable>
       </TableWrapper>
 
