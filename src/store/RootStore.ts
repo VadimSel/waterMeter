@@ -1,6 +1,6 @@
 import { types, flow } from 'mobx-state-tree';
 import { api } from '../api/api';
-import type { ApiMeterData } from '../types/apiTypes';
+import type { ApiMeterData, ApiAreasTypes } from '../types/apiTypes';
 
 const PAGE_SIZE = 20;
 
@@ -10,67 +10,84 @@ export const RootStore = types
     areasCache: types.map(types.string),
     offset: types.number,
     total: types.number,
+    isLoading: types.optional(types.boolean, false),
   })
   .views((self) => ({
     get totalPages() {
-      return Math.ceil(self.total / 20);
+      return Math.max(1, Math.ceil(self.total / PAGE_SIZE));
     },
     get currentPage() {
-      return self.offset / 20 + 1;
+      return Math.floor(self.offset / PAGE_SIZE) + 1;
     },
     get visiblePages() {
-  const pages: number[] = [];
-  const last = this.totalPages;
-  const current = this.currentPage;
+      const pages: number[] = [];
+      const last = this.totalPages;
+      const current = this.currentPage;
 
-  if (current < 3) {
-    for (let i = 1; i <= 3 && i <= last; i++) {
-      pages.push(i);
-    }
-  } else {
-    for (let i = current - 1; i <= current + 1; i++) {
-      if (i > 0 && i <= last) pages.push(i);
-    }
-  }
-  for (let i = last - 2; i <= last; i++) {
-    if (i > 0 && !pages.includes(i)) {
-      pages.push(i);
-    }
-  }
+      for (let i = 1; i <= 3 && i <= last; i++) {
+        pages.push(i);
+      }
 
-  return pages.sort((a, b) => a - b);
-}
+      for (let i = current - 1; i <= current + 1; i++) {
+        if (i > 3 && i < last - 2) {
+          pages.push(i);
+        }
+      }
 
+      for (let i = last - 2; i <= last; i++) {
+        if (i > 0) pages.push(i);
+      }
+
+      return [...new Set(pages)].sort((a, b) => a - b);
+    },
   }))
   .actions((self) => {
-    const getAreas = flow(function* (currentData: ApiMeterData[]) {
-      const uniqIds = [...new Set(currentData.map((el) => el.area.id))];
-      const neededIds = uniqIds.filter((id) => !self.areasCache.has(id));
+    const loadAreas = flow(function* (meters: ApiMeterData[]) {
+      const ids = Array.from(
+        new Set(
+          meters.map((m) => m.area.id).filter((id) => !self.areasCache.has(id))
+        )
+      );
 
-      for (const id of neededIds) {
-        const area = yield api.getAreas(id);
+      if (!ids.length) return;
+
+      const areas: ApiAreasTypes[] = yield api.getAreas(ids);
+
+      areas.forEach((area) => {
         self.areasCache.set(
-          id,
-          `${area.house.address}, ${area.str_number_full}`
+          area.id,
+          `${area.house.address}, кв. ${area.number}`
         );
-      }
+      });
     });
 
     const loadMeters = flow(function* () {
+      if (self.isLoading) return;
+      self.isLoading = true;
+
       const res = yield api.getMeters(PAGE_SIZE, self.offset);
+
       self.total = res.count;
-      yield getAreas(res.results);
       self.meters = res.results;
+
+      yield loadAreas(res.results);
+
+      self.isLoading = false;
     });
 
     return {
       loadMeters,
       setPage(page: number) {
-        self.offset = (page - 1) * PAGE_SIZE;
+        const safePage = Math.min(
+          Math.max(1, page),
+          Math.max(1, Math.ceil(self.total / PAGE_SIZE))
+        );
+
+        self.offset = (safePage - 1) * PAGE_SIZE;
         loadMeters();
       },
       getAddress(id: string) {
-        return self.areasCache.get(id);
+        return self.areasCache.get(id) ?? '';
       },
     };
   });

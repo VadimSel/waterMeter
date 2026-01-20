@@ -45,11 +45,8 @@ const Th = styled.th`
   text-align: left;
   color: #697180;
   &:first-child {
-    width: 60px;
+    width: 150px;
     text-align: center;
-  }
-  &:nth-child(2) {
-    width: 80px;
   }
 `;
 
@@ -155,14 +152,13 @@ export const Meters = observer(() => {
         <StyledTable>
           <Thead>
             <tr>
-              <Th>№</Th>
+              <Th>Порядковый номер</Th>
               <Th>Тип</Th>
               <Th>Дата установки</Th>
               <Th>Автоматический</Th>
-              <Th>Текущие показания</Th>
+              <Th>Значение</Th>
               <Th>Адрес</Th>
               <Th>Примечание</Th>
-              <Th></Th>
             </tr>
           </Thead>
           <Tbody>

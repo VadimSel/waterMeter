@@ -13,11 +13,12 @@ export const api = {
     return res.json();
   },
 
-  getAreas: async (id: string): Promise<ApiAreasTypes> => {
-    const res = await fetch(`${BASE}areas/?id=${id}`, {
+  getAreas: async (ids: string[]): Promise<ApiAreasTypes[]> => {
+    const query = ids.map((id) => `id__in=${id}`).join('&');
+    const res = await fetch(`${BASE}areas/?${query}`, {
       method: 'GET',
     });
     const data = await res.json();
-    return data.results[0];
+    return data.results;
   },
 };
